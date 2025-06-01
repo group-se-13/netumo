@@ -1,0 +1,8 @@
+# .gitignore
+backend/app/*__pycache__/
+backend/*.pyc
+backend/.env
+backend/venv
+backend/db.sqlite3
+frontend/node_modules/
+backend/*.log
