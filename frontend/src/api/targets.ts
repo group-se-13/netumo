@@ -1,0 +1,44 @@
+const BASE_URL = "http://127.0.0.1:8000"; // or your deployed server
+
+export const getTargets = async () => {
+  const res = await fetch(`${BASE_URL}/targets/`);
+  return await res.json();
+};
+
+export const addTarget = async (target: { url: string; name: string }) => {
+  const res = await fetch(`${BASE_URL}/targets/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(target),
+  });
+  return await res.json();
+};
+
+/**
+ * Fetch monitoring results with optional targetId, limit, and offset for pagination.
+ * @param targetId Optional target ID to filter results.
+ * @param limit Optional limit for number of results per page (default e.g. 50).
+ * @param offset Optional offset for pagination.
+ */
+export const getMonitoringResults = async (
+  targetId?: number,
+  limit: number = 50,
+  offset: number = 0
+) => {
+  const params = new URLSearchParams();
+
+  if (targetId !== undefined) params.append("target_id", targetId.toString());
+  params.append("limit", limit.toString());
+  params.append("offset", offset.toString());
+
+  const url = `${BASE_URL}/results/?${params.toString()}`;
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch monitoring results: ${res.statusText}`);
+  }
+
+  return await res.json();
+};
