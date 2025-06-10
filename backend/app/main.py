@@ -1,4 +1,4 @@
-GNU nano 6.2                                                                                 backend/app/main.py                                                                                          
+                                                                                                                                                                   
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
