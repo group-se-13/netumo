@@ -1,0 +1,46 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main  # your main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: your-aws-region  # e.g. us-east-1
+
+    - name: Login to Amazon ECR
+      id: ecr-login
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build Docker image
+      run: |
+        docker build -t netumo .
+        docker tag netumo:latest ${{ steps.ecr-login.outputs.registry }}/netumo:latest
+
+    - name: Push to Amazon ECR
+      run: |
+        docker push ${{ steps.ecr-login.outputs.registry }}/netumo:latest
+
+    - name: SSH to EC2 and deploy
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ec2-user
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          docker pull ${{ steps.ecr-login.outputs.registry }}/netumo:latest
+          docker stop netumo || true
+          docker rm netumo || true
+          docker run -d --name netumo -p 80:80 ${{ steps.ecr-login.outputs.registry }}/netumo:latest
