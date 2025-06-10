@@ -1,18 +1,9 @@
-name: 🚀 Deploy to AWS EC2 via Docker Compose
-
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     env:
-      IMAGE_NAME: netumo-image
       AWS_REGION: af-south-1
+      SERVICES: "backend frontend worker beat"  # Add more if needed
 
     steps:
     - name: ✅ Checkout code
@@ -31,44 +22,42 @@ jobs:
     - name: 🔐 Log in to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: 🏗️ Build and push Docker images using Compose
+    - name: 🏗️ Build and push Docker images
       run: |
         export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-        export IMAGE_URI="$ACCOUNT_ID.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.IMAGE_NAME }}"
         export COMMIT_SHA=${GITHUB_SHA::7}
+        export IMAGE_PREFIX="$ACCOUNT_ID.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
 
-        docker-compose build
-        docker tag ${env.IMAGE_NAME} $IMAGE_URI:latest
-        docker tag ${env.IMAGE_NAME} $IMAGE_URI:$COMMIT_SHA
+        for SERVICE in $SERVICES; do
+          IMAGE_NAME="$IMAGE_PREFIX/$SERVICE"
+          docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:$COMMIT_SHA -f ./$SERVICE/Dockerfile ./$SERVICE
+          docker push $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:$COMMIT_SHA
+        done
 
-        docker push $IMAGE_URI:latest
-        docker push $IMAGE_URI:$COMMIT_SHA
-
-        echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+        echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_ENV
         echo "COMMIT_SHA=$COMMIT_SHA" >> $GITHUB_ENV
 
-    - name: 🚀 SSH into EC2 and deploy with Docker Compose
+    - name: 🚀 SSH into EC2 and deploy
       uses: appleboy/ssh-action@v1.0.0
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
+          cd /home/ubuntu/your-app-dir  # Replace with correct path
           export AWS_REGION=${{ env.AWS_REGION }}
-          export IMAGE_NAME=${{ env.IMAGE_NAME }}
-          export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text --region $AWS_REGION)
-          export IMAGE_URI="$ACCOUNT_ID.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$IMAGE_NAME"
-          export TAG=${{ env.COMMIT_SHA }}
+          export ACCOUNT_ID=${{ env.ACCOUNT_ID }}
+          export COMMIT_SHA=${{ env.COMMIT_SHA }}
+          export IMAGE_PREFIX="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
 
-          # Authenticate Docker to ECR
-          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+          aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $IMAGE_PREFIX
 
-          # Pull latest image
-          docker pull $IMAGE_URI:$TAG
+          for SERVICE in backend frontend worker beat; do
+            IMAGE_TAG="$IMAGE_PREFIX/$SERVICE:$COMMIT_SHA"
+            docker pull $IMAGE_TAG
+            sed -i "s|image: $IMAGE_PREFIX/$SERVICE:.*|image: $IMAGE_TAG|" docker-compose.yml
+          done
 
-          # Replace image tag in docker-compose.yml and deploy
-          sed -i "s|image: .*|image: $IMAGE_URI:$TAG|g" docker-compose.yml
-
-          # Run Compose
           docker-compose down
-          docker-compose up -d
+          docker-compose up -d --remove-orphans
