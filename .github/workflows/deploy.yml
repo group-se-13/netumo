@@ -1,9 +1,17 @@
+name: Deploy to EC2 via Docker Compose
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: af-south-1
+  SERVICES: backend frontend worker beat
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      AWS_REGION: af-south-1
-      SERVICES: "backend frontend worker beat"  # Add more if needed
 
     steps:
     - name: ✅ Checkout code
@@ -24,19 +32,19 @@ jobs:
 
     - name: 🏗️ Build and push Docker images
       run: |
-        export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-        export COMMIT_SHA=${GITHUB_SHA::7}
-        export IMAGE_PREFIX="$ACCOUNT_ID.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com"
-
-        for SERVICE in $SERVICES; do
-          IMAGE_NAME="$IMAGE_PREFIX/$SERVICE"
-          docker build -t $IMAGE_NAME:latest -t $IMAGE_NAME:$COMMIT_SHA -f ./$SERVICE/Dockerfile ./$SERVICE
-          docker push $IMAGE_NAME:latest
-          docker push $IMAGE_NAME:$COMMIT_SHA
-        done
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        COMMIT_SHA=${GITHUB_SHA::7}
+        IMAGE_PREFIX="$ACCOUNT_ID.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
         echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_ENV
         echo "COMMIT_SHA=$COMMIT_SHA" >> $GITHUB_ENV
+        echo "IMAGE_PREFIX=$IMAGE_PREFIX" >> $GITHUB_ENV
+
+        for SERVICE in $SERVICES; do
+          docker build -t $IMAGE_PREFIX/$SERVICE:latest -t $IMAGE_PREFIX/$SERVICE:$COMMIT_SHA -f ./$SERVICE/Dockerfile ./$SERVICE
+          docker push $IMAGE_PREFIX/$SERVICE:latest
+          docker push $IMAGE_PREFIX/$SERVICE:$COMMIT_SHA
+        done
 
     - name: 🚀 SSH into EC2 and deploy
       uses: appleboy/ssh-action@v1.0.0
@@ -45,11 +53,11 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          cd /home/ubuntu/your-app-dir  # Replace with correct path
+          cd /home/ubuntu/your-app-dir  # Replace with your app directory
           export AWS_REGION=${{ env.AWS_REGION }}
           export ACCOUNT_ID=${{ env.ACCOUNT_ID }}
           export COMMIT_SHA=${{ env.COMMIT_SHA }}
-          export IMAGE_PREFIX="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+          export IMAGE_PREFIX="${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
           aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $IMAGE_PREFIX
 
