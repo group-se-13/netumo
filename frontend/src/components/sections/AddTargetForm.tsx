@@ -21,10 +21,11 @@ const AddTargetForm = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Update local state only if the actual values of name or url change
   useEffect(() => {
     setName(initialData.name);
     setUrl(initialData.url);
-  }, [initialData]);
+  }, [initialData.name, initialData.url]);  // <-- fix here
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

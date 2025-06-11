@@ -1,4 +1,5 @@
-const BASE_URL = "http://127.0.0.1:8000"; // or your deployed server
+const BASE_URL = import.meta.env.VITE_BASE_URL;
+
 
 export const getTargets = async () => {
   const res = await fetch(`${BASE_URL}/targets/`);
