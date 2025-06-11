@@ -16,6 +16,30 @@ export const addTarget = async (target: { url: string; name: string }) => {
   return await res.json();
 };
 
+export const updateTarget = async (id: number, target: { url: string; name: string; active: boolean }) => {
+  const res = await fetch(`${BASE_URL}/targets/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(target),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to update target with id ${id}`);
+  }
+  return await res.json();
+};
+
+export const deleteTarget = async (id: number) => {
+  const res = await fetch(`${BASE_URL}/targets/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to delete target with id ${id}`);
+  }
+  return;
+};
+
 /**
  * Fetch monitoring results with optional targetId, limit, and offset for pagination.
  * @param targetId Optional target ID to filter results.

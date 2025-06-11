@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { getTargets, getMonitoringResults } from "../api/targets";
 import type { Target, MonitoringResult } from "../types/types";
 import { theme } from "../styles/theme";
+import TargetForm from "../components/sections/AddTargetForm";
 
 import {
   PieChart,
@@ -84,9 +85,15 @@ const Dashboard = () => {
   const responseTimeData = useMemo(() => {
     return [...results]
       .filter((r) => r.response_time != null)
-      .sort((a, b) => new Date(a.checked_at).getTime() - new Date(b.checked_at).getTime())
+      .sort(
+        (a, b) =>
+          new Date(a.checked_at).getTime() - new Date(b.checked_at).getTime()
+      )
       .map((r) => ({
-        time: new Date(r.checked_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        time: new Date(r.checked_at).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
         responseTime: r.response_time,
       }));
   }, [results]);
@@ -98,7 +105,10 @@ const Dashboard = () => {
         errorCounts[r.error] = (errorCounts[r.error] || 0) + 1;
       }
     });
-    return Object.entries(errorCounts).map(([error, count]) => ({ error, count }));
+    return Object.entries(errorCounts).map(([error, count]) => ({
+      error,
+      count,
+    }));
   }, [results]);
 
   return (
@@ -111,8 +121,12 @@ const Dashboard = () => {
         <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {targets.map((target) => (
             <li key={target.id} className={theme.card}>
-              <h3 className="font-semibold text-lg text-gray-800 dark:text-white">{target.name}</h3>
-              <p className="text-sm text-blue-600 dark:text-blue-400">{target.url}</p>
+              <h3 className="font-semibold text-lg text-gray-800 dark:text-white">
+                {target.name}
+              </h3>
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                {target.url}
+              </p>
             </li>
           ))}
         </ul>
@@ -142,7 +156,9 @@ const Dashboard = () => {
                   {statusData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={entry.name === "Success" ? SUCCESS_COLOR : FAILURE_COLOR}
+                      fill={
+                        entry.name === "Success" ? SUCCESS_COLOR : FAILURE_COLOR
+                      }
                     />
                   ))}
                 </Pie>
@@ -180,10 +196,16 @@ const Dashboard = () => {
               Errors Count
             </h3>
             {errorData.length === 0 ? (
-              <p className="text-center text-gray-500 dark:text-gray-400">No errors found</p>
+              <p className="text-center text-gray-500 dark:text-gray-400">
+                No errors found
+              </p>
             ) : (
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={errorData} layout="vertical" margin={{ left: 50 }}>
+                <BarChart
+                  data={errorData}
+                  layout="vertical"
+                  margin={{ left: 50 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" />
                   <YAxis dataKey="error" type="category" width={150} />
@@ -209,7 +231,8 @@ const Dashboard = () => {
             Previous
           </button>
           <span className="text-sm text-gray-600 dark:text-gray-300">
-            Page {page + 1} — Showing {results.length} result{results.length !== 1 && "s"}
+            Page {page + 1} — Showing {results.length} result
+            {results.length !== 1 && "s"}
           </span>
           <button
             onClick={handleNextPage}
@@ -224,7 +247,13 @@ const Dashboard = () => {
           <table className={`${theme.table} w-full text-left border-collapse`}>
             <thead className="bg-gray-100 dark:bg-gray-800">
               <tr>
-                {["Target ID", "Status", "Response Time (s)", "Checked At", "Error"].map((header) => (
+                {[
+                  "Target ID",
+                  "Status",
+                  "Response Time (s)",
+                  "Checked At",
+                  "Error",
+                ].map((header) => (
                   <th
                     key={header}
                     className={`${theme.th} px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300`}
@@ -240,7 +269,9 @@ const Dashboard = () => {
                   key={res.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
                 >
-                  <td className={`${theme.td} px-6 py-4 text-sm`}>{res.target_id}</td>
+                  <td className={`${theme.td} px-6 py-4 text-sm`}>
+                    {res.target_id}
+                  </td>
                   <td className={`${theme.td} px-6 py-4 text-sm`}>
                     {res.success ? (
                       <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
@@ -252,14 +283,28 @@ const Dashboard = () => {
                       </span>
                     )}
                   </td>
-                  <td className={`${theme.td} px-6 py-4 text-sm`}>{res.response_time ?? "N/A"}</td>
-                  <td className={`${theme.td} px-6 py-4 text-sm`}>{res.checked_at}</td>
-                  <td className={`${theme.td} px-6 py-4 text-sm`}>{res.error ?? "-"}</td>
+                  <td className={`${theme.td} px-6 py-4 text-sm`}>
+                    {res.response_time ?? "N/A"}
+                  </td>
+                  <td className={`${theme.td} px-6 py-4 text-sm`}>
+                    {res.checked_at}
+                  </td>
+                  <td className={`${theme.td} px-6 py-4 text-sm`}>
+                    {res.error ?? "-"}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      </section>
+      <section className={theme.section}>
+        <TargetForm
+          onTargetSaved={async () => {
+        const updatedTargets = await getTargets();
+        setTargets(updatedTargets);
+          }}
+        />
       </section>
     </div>
   );
