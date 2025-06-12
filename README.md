@@ -160,7 +160,6 @@ netumo/
 ├── frontend/              # React frontend
 ├── docker-compose.yml     # Orchestration
 ├── .github/workflows/     # CI/CD config
-├── requirements.txt
 └── README.md              # This file
 ```
 
