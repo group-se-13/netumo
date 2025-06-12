@@ -1,154 +1,195 @@
 
+---
 
-# 🚀 Mini-Netumo - Website Monitoring System
+# 🛰️ Mini-Netumo - Website Monitoring System
 
-Mini-Netumo is a lightweight website monitoring system that allows users to register websites (targets) to be monitored for uptime, response status, and performance. The system periodically checks each target and logs the results in a PostgreSQL database.
+> **Capstone Project - CS 421: Application Deployment and Management**
+> **The University of Dodoma** — College of Informatics and Virtual Education
+> **Instructor:** Dr. Goodiel C. Moshi
+> **Submission Date:** 7th June 2025
+> **Developed by:** Group 13
 
 ---
 
-## 🛠️ Tech Stack
+## 📚 Project Overview
 
-### Backend
-- **[FastAPI](https://fastapi.tiangolo.com/)** — modern, fast (high-performance), web framework for Python.
-- **[SQLAlchemy](https://www.sqlalchemy.org/)** — ORM for interacting with PostgreSQL.
-- **[Databases](https://www.encode.io/databases/)** — Async database support for SQLAlchemy.
-- **[Celery](https://docs.celeryq.dev/)** — Distributed task queue for background jobs.
-- **[Redis](https://redis.io/)** — Message broker used by Celery.
-- **[HTTPX](https://www.python-httpx.org/)** — Async HTTP client for checking websites.
+**Mini-Netumo** is a lightweight, open-source website monitoring system inspired by commercial tools like Netumo. It is designed to:
 
-### Frontend (Planned)
-- **React + TypeScript**
-- **TailwindCSS**
-- **Chart.js + React Chart.js 2**
-- **React Query**
+* Continuously monitor website uptime and response latency.
+* Check SSL certificate and domain registration validity.
+* Notify users via email or webhook when issues are detected.
+
+This project demonstrates real-world deployment of microservices using DevOps best practices, containerization, and CI/CD, as required by the CS 421 Capstone Project.
 
 ---
 
+## 🎯 Objectives
+
+* ✅ Schedule periodic HTTP/HTTPS checks for registered targets.
+* ✅ Log response status codes, latency, and failure timestamps.
+* ✅ Perform daily SSL and WHOIS checks.
+* ✅ Notify users of downtime or expiring certificates/domains.
+* ✅ Provide a user-friendly frontend dashboard.
+* ✅ Implement CI/CD pipeline and deploy a live service to AWS.
 
 ---
 
-## ✅ Features Completed
+## ⚙️ Tech Stack
 
-- [x] Add monitoring targets via API (`POST /targets`)
-- [x] List all monitoring targets (`GET /targets`)
-- [x] View individual target (`GET /targets/{id}`)
-- [x] Background task (via Celery) to:
-  - Periodically check URLs
-  - Record response time, status code, and errors
-- [x] Store monitoring logs in `monitoring_results` table
-- [x] API to fetch monitoring logs with filters (`GET /monitoring`)
+### 🔧 Backend
+
+* **FastAPI** — Modern async web framework
+* **PostgreSQL** — Relational database
+* **SQLAlchemy** — ORM
+* **Celery + Redis** — Task queue and message broker
+* **HTTPX** — Async HTTP client
+* **OpenSSL / WHOIS** — Certificate and domain validity checks
+
+### 🎨 Frontend
+
+* **React + TypeScript** — SPA dashboard
+* **TailwindCSS** — Utility-first CSS
+* **Chart.js / React-Chartjs-2** — Uptime and latency visualizations
+* **React Query** — Data fetching
+
+### 🚀 DevOps
+
+* **Docker + Docker Compose** — Containerization
+* **NGINX** — Load balancer for high availability
+* **GitHub Actions** — CI/CD pipeline for test/build/deploy
+* **AWS EC2** — Deployment on Free-Tier
 
 ---
 
-## 🚧 Features in Progress
+## 📦 Features
 
-- [ ] React frontend with:
-  - [ ] Form to add new monitoring targets
-  - [ ] List view of targets with their statuses
-  - [ ] Charts of historical uptime and response time
-- [ ] Docker-based deployment
-- [ ] CI/CD with GitHub Actions or similar
+### ✅ Completed
+
+* [x] API endpoints for targets and monitoring results
+* [x] Periodic uptime checks via Celery workers
+* [x] Daily SSL and domain expiry checks
+* [x] Alerts via email and webhooks
+* [x] PostgreSQL data persistence
+* [x] Dockerized microservices architecture
+* [x] CI/CD pipeline via GitHub Actions few step remained to accomplish set up the secretes
+* [x] Auto-deployment to AWS EC2 with zero-downtime
+* [x] Frontend dashboard with real-time status and charts
+
+### 🚧 In Progress
+
+* [ ] Additional frontend filtering and charts
+* [ ] Multi-user authentication support
 
 ---
 
-## 📦 Installation
+## 🧪 API Endpoints
 
-### Backend Setup
+| Method | Endpoint        | Description                    |
+| ------ | --------------- | ------------------------------ |
+| GET    | `/targets/`     | List all monitoring targets    |
+| POST   | `/targets/`     | Add new monitoring target      |
+| GET    | `/targets/{id}` | Get details of specific target |
+| GET    | `/results/`     | Fetch all monitoring logs      |
 
-1. Clone the repository:
+Secured via JWT and fully documented with Swagger (OpenAPI).
+
+---
+
+## 🧰 Setup Instructions
+
+### Backend (FastAPI + Celery)
 
 ```bash
-git remote add origin https://github.com/FineDR/netumo.git
-cd mini-netumo
-````
+# Clone the repository
+git clone https://github.com/group-se-13/netumo.git for ssh git clone git@github.com:group-se-13/netumo.git
+cd netumo
 
-2. Create and activate a virtual environment:
-
-```bash
+# Set up virtual environment
 python3 -m venv venv
 source venv/bin/activate
-```
 
-3. Install dependencies:
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-4. Create a `.env` file and configure:
+# Configure environment
+cp .env.example .env
+# Edit DATABASE_URL and REDIS_URL as needed
 
-```
-DATABASE_URL=postgresql://user:password@localhost:5432/netumo
-REDIS_URL=redis://localhost:6379/0
-```
-
-5. Run the FastAPI server:
-
-```bash
+# Start FastAPI server
 uvicorn app.main:app --reload
-```
 
-6. Start the Celery worker:
-
-```bash
+# Start Celery worker
 celery -A app.celery_worker.celery_app worker --loglevel=info
-```
 
-7. Start Celery beat (for periodic tasks):
-
-```bash
+# Start Celery beat
 celery -A app.celery_worker.celery_app beat --loglevel=info
 ```
 
----
+### Frontend (React + TypeScript)
 
-## 📬 API Endpoints
-
-### Monitoring Targets
-
-| Method | Endpoint               | Description       |
-| ------ | ---------------------- | ----------------- |
-| GET    | `/targets/`            | Read Targets      |
-| POST   | `/targets/`            | Create Target     |
-| GET    | `/targets/{target_id}` | Read Target       |
-
-### Monitoring Results
-
-| Method | Endpoint        | Description            |
-| ------ | --------------- | ---------------------- |
-| GET    | `/results/`     | Get Monitoring Results |
-
-### Default
-
-| Method | Endpoint | Description |
-| ------ | -------- | ----------- |
-| GET    | `/`      | Root        |
-
-
----
-
-## 📈 Upcoming Frontend
-
-The frontend will be built using React and allow users to:
-
-* Add new targets via a form
-* View status and logs of all monitored targets
-* Visualize uptime and performance with charts
-
----
-
-## 👨‍💻 Author
-
-**Group 13 - CS 421 Capstone Project**
-University of Dodoma, 2025
-
----
-
-## 📖 License
-
-This project is licensed under the MIT License.
-
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
+### Docker Compose
 
-# netumo
+```bash
+docker-compose up --build -d
+```
+
+> Visit the app at: `http://16.171.255.190/`
+
+---
+
+## 🌍 Live Deployment
+
+* **API Base URL:** `http://16.171.255.190/api`
+* **Frontend Dashboard:** `http://16.171.255.190/`
+
+---
+
+---
+
+## 📷 Artefact Bundle (to be submitted)
+
+* `/logs/` — compressed monitoring and notification logs
+* `/db_backup.sql.gz` — auto-generated DB backup
+
+---
+
+## 🧠 Contributors
+
+**Group 13** — CS 421, University of Dodoma
+Include a *Responsibility Matrix* in the design dossier PDF (RACI).
+
+---
+
+## 📜 License
+
+This project is licensed under the **MIT License**. See `LICENSE` for details.
+
+---
+
+## 📩 Contact
+
+For questions or feedback:
+
+* 📧 **Instructor:** [goodiel.moshi@udom.ac.tz](mailto:goodiel.moshi@udom.ac.tz)
+* 🧑‍🏫 **Course:** CS 421 - Application Deployment and Management
+* 🏫 **Institution:** The University of Dodoma
+
+---
+
+### ✅ Ready for Grading
+
+This repository includes:
+
+* [x] Complete source code and Docker stack
+* [x] CI/CD pipeline and GitHub Actions though not done completely
+* [x] Live EC2 deployment
+* [x] Design dossier PDF
+* [x] Artefact bundle (logs, screenshots, backups)
+
+---
