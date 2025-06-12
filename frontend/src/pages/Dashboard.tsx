@@ -21,7 +21,6 @@ import {
 } from "recharts";
 
 const PAGE_SIZE = 10;
-
 const SUCCESS_COLOR = "#4ade80"; // green-400
 const FAILURE_COLOR = "#f87171"; // red-400
 
@@ -31,8 +30,8 @@ const Dashboard = () => {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [filterTargetId, setFilterTargetId] = useState("");
 
-  // Fetch monitoring targets on mount
   useEffect(() => {
     const fetchTargets = async () => {
       try {
@@ -45,7 +44,6 @@ const Dashboard = () => {
     fetchTargets();
   }, []);
 
-  // Fetch monitoring results with pagination
   useEffect(() => {
     const fetchResults = async () => {
       setLoading(true);
@@ -71,19 +69,24 @@ const Dashboard = () => {
     if (hasMore) setPage((p) => p + 1);
   };
 
-  // ======= Chart Data =======
+  const filteredResults = useMemo(() => {
+    if (!filterTargetId.trim()) return results;
+    return results.filter((res) =>
+      res.target_id.toString().toLowerCase().includes(filterTargetId.toLowerCase())
+    );
+  }, [results, filterTargetId]);
 
   const statusData = useMemo(() => {
-    const success = results.filter((r) => r.success).length;
-    const failure = results.length - success;
+    const success = filteredResults.filter((r) => r.success).length;
+    const failure = filteredResults.length - success;
     return [
       { name: "Success", value: success },
       { name: "Failure", value: failure },
     ];
-  }, [results]);
+  }, [filteredResults]);
 
   const responseTimeData = useMemo(() => {
-    return [...results]
+    return [...filteredResults]
       .filter((r) => r.response_time != null)
       .sort(
         (a, b) =>
@@ -96,11 +99,11 @@ const Dashboard = () => {
         }),
         responseTime: r.response_time,
       }));
-  }, [results]);
+  }, [filteredResults]);
 
   const errorData = useMemo(() => {
     const errorCounts: Record<string, number> = {};
-    results.forEach((r) => {
+    filteredResults.forEach((r) => {
       if (r.error?.trim()) {
         errorCounts[r.error] = (errorCounts[r.error] || 0) + 1;
       }
@@ -109,7 +112,7 @@ const Dashboard = () => {
       error,
       count,
     }));
-  }, [results]);
+  }, [filteredResults]);
 
   return (
     <div className="p-8 space-y-10 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-black min-h-screen">
@@ -218,6 +221,26 @@ const Dashboard = () => {
         </div>
       </section>
 
+      {/* Filter by Target ID */}
+      <section className={theme.section}>
+        <h2 className={theme.subtitle}>🔍 Filter by Target ID</h2>
+        <div className="flex gap-4 items-center mb-4">
+          <input
+            type="text"
+            placeholder="Enter Target ID..."
+            value={filterTargetId}
+            onChange={(e) => setFilterTargetId(e.target.value)}
+            className="px-4 py-2 w-full md:w-1/3 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100"
+          />
+          <button
+            onClick={() => setFilterTargetId("")}
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+          >
+            Clear
+          </button>
+        </div>
+      </section>
+
       {/* Monitoring Results Table */}
       <section className={theme.section}>
         <h2 className={theme.subtitle}>📊 Latest Monitoring Results</h2>
@@ -231,8 +254,8 @@ const Dashboard = () => {
             Previous
           </button>
           <span className="text-sm text-gray-600 dark:text-gray-300">
-            Page {page + 1} — Showing {results.length} result
-            {results.length !== 1 && "s"}
+            Page {page + 1} — Showing {filteredResults.length} result
+            {filteredResults.length !== 1 && "s"}
           </span>
           <button
             onClick={handleNextPage}
@@ -264,7 +287,7 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {results.map((res) => (
+              {filteredResults.map((res) => (
                 <tr
                   key={res.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
@@ -298,11 +321,13 @@ const Dashboard = () => {
           </table>
         </div>
       </section>
+
+      {/* Target Form */}
       <section className={theme.section}>
         <TargetForm
           onTargetSaved={async () => {
-        const updatedTargets = await getTargets();
-        setTargets(updatedTargets);
+            const updatedTargets = await getTargets();
+            setTargets(updatedTargets);
           }}
         />
       </section>
