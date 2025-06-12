@@ -158,7 +158,7 @@ const Dashboard = () => {
                 >
                   {statusData.map((entry, index) => (
                     <Cell
-                      key={cell-${index}}
+                      key={`cell-${index}`}
                       fill={
                         entry.name === "Success" ? SUCCESS_COLOR : FAILURE_COLOR
                       }
@@ -267,7 +267,7 @@ const Dashboard = () => {
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-gray-300 dark:border-gray-700 shadow-lg">
-          <table className={${theme.table} w-full text-left border-collapse}>
+          <table className={`${theme.table} w-full text-left border-collapse`}>
             <thead className="bg-gray-100 dark:bg-gray-800">
               <tr>
                 {[
@@ -279,7 +279,7 @@ const Dashboard = () => {
                 ].map((header) => (
                   <th
                     key={header}
-                    className={${theme.th} px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300}
+                    className={`${theme.th} px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300`}
                   >
                     {header}
                   </th>
@@ -292,10 +292,10 @@ const Dashboard = () => {
                   key={res.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
                 >
-                  <td className={${theme.td} px-6 py-4 text-sm}>
+                  <td className={`${theme.td} px-6 py-4 text-sm`}>
                     {res.target_id}
                   </td>
-                  <td className={${theme.td} px-6 py-4 text-sm}>
+                  <td className={`${theme.td} px-6 py-4 text-sm`}>
                     {res.success ? (
                       <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400">
                         ✅ <span>{res.status_code ?? "N/A"}</span>
@@ -306,13 +306,13 @@ const Dashboard = () => {
                       </span>
                     )}
                   </td>
-                  <td className={${theme.td} px-6 py-4 text-sm}>
+                  <td className={`${theme.td} px-6 py-4 text-sm`}>
                     {res.response_time ?? "N/A"}
                   </td>
-                  <td className={${theme.td} px-6 py-4 text-sm}>
+                  <td className={`${theme.td} px-6 py-4 text-sm`}>
                     {res.checked_at}
                   </td>
-                  <td className={${theme.td} px-6 py-4 text-sm}>
+                  <td className={`${theme.td} px-6 py-4 text-sm`}>
                     {res.error ?? "-"}
                   </td>
                 </tr>
